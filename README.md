@@ -5,12 +5,13 @@
 ### Idempotent GitHub Content Persistence
 **File:** PDF-To-Github.js
 
-> This logic functions as the persistence layer, enabling the application to synchronize recovered code with a remote GitHub repository. It performs a check-then-push workflow to retrieve the SHA of existing files, preventing merge conflicts and ensuring updates are correctly applied to the git tree.
+> This logic manages the system's integration with the GitHub API. It utilizes a check-then-push pattern that retrieves the SHA of existing files before updating, ensuring idempotent operations and preventing version conflicts during the recovery process.
 
 ```typescript
 const pushFileToGithub = async (content, filename) => {
     const headers = { 'Authorization': `token ${ghToken}`, 'Accept': 'application/vnd.github.v3+json' };
     const path = `${targetPath}/${filename}`;
+    
     try {
       let sha = null;
       const check = await fetch(`https://api.github.com/repos/${ghRepo}/contents/${path}`, { headers });
@@ -18,6 +19,7 @@ const pushFileToGithub = async (content, filename) => {
         const data = await check.json();
         sha = data.sha;
       }
+
       const b64Content = btoa(unescape(encodeURIComponent(content)));
       const response = await fetch(`https://api.github.com/repos/${ghRepo}/contents/${path}`, {
         method: 'PUT',
@@ -28,6 +30,7 @@ const pushFileToGithub = async (content, filename) => {
           sha
         })
       });
+
       return response.ok;
     } catch (e) {
       console.error("GitHub Push Error", e);
@@ -40,11 +43,14 @@ const pushFileToGithub = async (content, filename) => {
 ### AI-Driven Python Extraction Engine
 **File:** PDF-To-Github.js
 
-> This is the core transformation logic of the system. It leverages the Llama-3.3-70b model via the Cerebras API to parse unstructured text fragments and reconstruct clean, executable Python code, effectively acting as the 'brain' that interprets PDF contents.
+> This is the core transformation logic. It leverages the Llama-3.3-70b model via the Cerebras API to parse unstructured text segments and reconstruct them into clean Python code, serving as the primary intelligence layer of the application.
 
 ```typescript
 const processSnippet = async (textSnippet, index) => {
-    const prompt = `Extract Python code from this text fragment. Return ONLY code. \n    If you see output/logs, put them in a comment block at the bottom.\n    FRAGMENT: ${textSnippet}`;
+    const prompt = `Extract Python code from this text fragment. Return ONLY code. 
+    If you see output/logs, put them in a comment block at the bottom.
+    FRAGMENT: ${textSnippet}`;
+
     try {
       const response = await fetch('https://api.cerebras.ai/v1/chat/completions', {
         method: 'POST',
@@ -59,6 +65,7 @@ const processSnippet = async (textSnippet, index) => {
           max_tokens: 1024
         })
       });
+
       if (response.status === 429) {
         addLog("⚠️ RATE LIMIT HIT (429)");
       }
@@ -72,7 +79,7 @@ const processSnippet = async (textSnippet, index) => {
 ### Dynamic Runtime Dependency Injection
 **File:** PDF-To-Github.js
 
-> This pattern allows the application to maintain a small initial bundle size by dynamically injecting the PDF.js library and its corresponding worker from a CDN only when the component mounts. This is critical for high-performance PDF processing in a browser environment without local build-time dependencies.
+> This architectural pattern allows the application to maintain a lightweight footprint by dynamically injecting the heavy PDF.js library and its worker at runtime. This avoids bulky local dependencies while ensuring the browser has the necessary tools for document processing.
 
 ```typescript
 useEffect(() => {
@@ -89,7 +96,7 @@ useEffect(() => {
 ### Interruptible Asynchronous Throttling
 **File:** PDF-To-Github.js
 
-> To handle strict external API rate limits, this utility provides a non-blocking delay mechanism. It integrates with the React lifecycle by checking an 'abort' ref, allowing the system to halt processes instantly while providing visual countdown feedback to the user.
+> To handle strict external API rate limits, this utility provides a non-blocking delay mechanism. It integrates with React refs to allow immediate cancellation of the loop, providing a responsive UX even during mandated cooling-off periods.
 
 ```typescript
 const waitWithCountdown = async (seconds) => {
@@ -106,7 +113,7 @@ const waitWithCountdown = async (seconds) => {
 ### Browser-Native State Synchronization
 **File:** PDF-To-Github.js
 
-> This chunk implements a 'serverless' persistence model for user credentials. By synchronizing application state with localStorage, it ensures that sensitive configuration data (API keys and repository paths) survives page refreshes without requiring a backend database.
+> This chunk implements a serverless persistence model for user credentials and settings. By synchronizing application state with LocalStorage, it ensures functional continuity across browser refreshes without requiring a centralized database.
 
 ```typescript
 useEffect(() => {
